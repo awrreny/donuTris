@@ -1,42 +1,8 @@
 // import { binarySearchIndex, factorNumber, findPrimeFactorisation, getLowestCommonMultiple, isPrime, mergeArrays, sortArray } from "./functions.js";
 import { getKickOffsets, getMinoLocations } from "./piece_info.js";
+import * as display from "./display_info.js";
 const canvas = document.getElementById("gameCanvas");  // code from https://developer.mozilla.org/en-US/docs/Games/Tutorials/2D_Breakout_game_pure_JavaScript/Create_the_Canvas_and_draw_on_it
 const ctx = canvas.getContext("2d");
-
-// use export thing later
-// const red = "#ff4020"
-// const orange = "#ff8020"
-// const yellow = "#ffe020"
-// const green = "#40d040"
-// const cyan = "#00d0ff"
-// const blue = "#4080ff"
-// const purple = "#a040f0"
-// const grey = "#bbbbbb"
-// const black = "#000000"
-
-
-// dark, light, main
-const red_3d = ["#cf3319", "#ff6950", "#ff4020"]
-const orange_3d = ["#da6d1b", "#ff9c51", "#ff8020"]
-const yellow_3d = ["#dcc11c", "#ffec73", "#ffe020"]
-const green_3d = ["#34ae34", "#73d173", "#40d040"]
-const cyan_3d = ["#00afd8", "#5ee1ff", "#00d0ff"]
-const blue_3d = ["#3060c0", "#6397ff", "#4080ff"]
-const purple_3d = ["#8332c7", "#b161f4", "#a040f0"]
-const grey_3d = ["#9a9a9a", "#cbcbcb", "#000000"] // "#bbbbbb" last value for filled-in ghost block
-const black_3d = ["#000000", "#181818", "#000000"]
-
-const pieceToColour = {
-    "_":black_3d,
-    "T":purple_3d,
-    "I":cyan_3d,
-    "L":orange_3d,
-    "J":blue_3d,
-    "S":green_3d,
-    "Z":red_3d,
-    "O":yellow_3d,
-    "X":grey_3d
-}
 
 function shuffleArray(arr) {  // code from https://www.w3docs.com/snippets/javascript/how-to-randomize-shuffle-a-javascript-array.html
     arr.sort(() => Math.random() - 0.5);
@@ -83,7 +49,7 @@ class gameBoard {
             sizeOffset = colourLayer*pixelPadding
             positionOffset = (colourLayer === 2) ? pixelPadding : 0;
             this.drawSquare(coords[0]+positionOffset, coords[1]+positionOffset, 
-                this.minoSize-sizeOffset, pieceToColour[piece][colourLayer])
+                this.minoSize-sizeOffset, display.pieceToColour[piece][colourLayer])
         }
     }
 
