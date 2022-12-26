@@ -296,7 +296,7 @@ class gameBoard {
         // it can be reset when you move or rotate a piece (only with a valid movement/rotation)
         // maxActiveTime is the maximum time a piece can be active before auto locking, regardless of lock delay
         if (currentTime-this.timeWhenOnGround > lockDelay ||
-            currentTime-this.timeOfLastPiecePlacement > totalLockTime) {
+            currentTime-this.timeOfLastPiecePlacement > maxActiveTime) {
             this.hardDrop()
         }
     }
