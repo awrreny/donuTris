@@ -5,6 +5,8 @@ const canvas = document.getElementById("gameCanvas");  // code from https://deve
 const ctx = canvas.getContext("2d");
 
 const msPerFrame = 17;  // 60fps
+let DAS = 80
+let ARR = 50
 let currentTime = performance.now();
 
 function shuffleArray(arr) {  // code from https://www.w3docs.com/snippets/javascript/how-to-randomize-shuffle-a-javascript-array.html
@@ -30,6 +32,10 @@ class gameBoard {
         this.gravityTimeDebt = 0;
         this.timeOfLastGravityMovement = currentTime;
         this.timeWhenOnGround = currentTime;  // for lock delay
+        this.leftKeyPressed = false;
+        this.rightKeyPressed = false;
+        this.timeOfLastLeftKeyPress = currentTime
+        this.timeOfLastRightKeyPress = currentTime
         this.ARRTimeDebt = 0;
 
         this.board = new Array(this.rows);
@@ -304,6 +310,21 @@ class gameBoard {
         }
     }
 
+    makeDASmovements() {
+        if (!this.leftKeyPressed) {
+            this.timeOfLastLeftKeyPress = currentTime;
+        }
+        if (currentTime - this.timeOfLastLeftKeyPress > DAS) {
+            this.translatePiece([-1,0])
+        }
+        if (!this.rightKeyPressed) {
+            this.timeOfLastRightKeyPress = currentTime;
+        }
+        if (currentTime - this.timeOfLastRightKeyPress > DAS) {
+            this.translatePiece([1,0])
+        }
+    }
+
 
     // donuTransformations
     donuTransform(transformation) {
@@ -392,6 +413,7 @@ function gameLoop() {
     ctx.fillStyle = "#303030"
     ctx.fill()
     ctx.closePath();
+    donuBoard.makeDASmovements()
     donuBoard.gravityDrop(1000, 1000, 20000)
     donuBoard.drawBoard(125);
 }
@@ -408,7 +430,7 @@ document.addEventListener("keydown", (event) => {  // modified code from https:/
     if (event.defaultPrevented) {
       return; // Do nothing if the event was already processed
     }
-    // console.log(event.key)
+    // console.log(event.code)
     switch (event.key) {
         case "ArrowDown":
             donuBoard.translatePiece([0, -1])
@@ -417,10 +439,16 @@ document.addEventListener("keydown", (event) => {  // modified code from https:/
             donuBoard.translatePiece([0, 1])
             break;
         case "ArrowLeft":
-            donuBoard.translatePiece([-1, 0])
+            if (!donuBoard.leftKeyPressed) {
+                donuBoard.translatePiece([-1, 0]);
+                donuBoard.leftKeyPressed = true;
+            }
             break;
         case "ArrowRight":
-            donuBoard.translatePiece([1, 0])
+            if (!donuBoard.rightKeyPressed) {
+                donuBoard.translatePiece([1, 0])
+                donuBoard.rightKeyPressed = true;
+            }
             break;
         case "d":
             donuBoard.rotatePiece(1)
@@ -464,7 +492,32 @@ document.addEventListener("keydown", (event) => {  // modified code from https:/
   
     // Cancel the default action to avoid it being handled twice
     event.preventDefault();
-  }, true);
+}, true);
+
+document.addEventListener("keyup", (event) => {  // modified code from https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key
+    if (event.defaultPrevented) {
+        return; // Do nothing if the event was already processed
+    }
+    // console.log(event.key)
+    switch (event.key) {
+        case "ArrowDown":
+            break;
+        case "ArrowUp":
+            break;
+        case "ArrowLeft":
+            donuBoard.leftKeyPressed = false;
+            break;
+        case "ArrowRight":
+            donuBoard.rightKeyPressed = false;
+            break;
+        default:
+            return; // Quit when this doesn't handle the key event.
+    }
+    
+    // Cancel the default action to avoid it being handled twice
+    event.preventDefault();
+}, true);
+
 
 donuBoard.drawBoard();
 setInterval(gameLoop, msPerFrame)
