@@ -94,7 +94,7 @@ class gameBoard {
         // ghost piece
         const ghostPieceXY = [
             leftXvalue+((this.pieceCoords[0]-1)*this.minoSize),
-            (this.rows-this.findBottom()[1])*this.minoSize
+            (this.rows-this.findEdge([0,-1])[1])*this.minoSize
         ]
         this.drawNonBoardPiece(ghostPieceXY, "X", this.pieceOrientation)
         
@@ -191,15 +191,18 @@ class gameBoard {
         // console.log("rotation failed")
     }
     
-    findBottom() {
+    findEdge(vector) {
         let newCoords = [...this.pieceCoords]
         while (true) {
+            // newCoords = newCoords.map((coord, index) => coord+vector[index])
+            newCoords = [newCoords[0]+vector[0], newCoords[1], vector[1]]
+
             if (this.validPlacement([newCoords[0], newCoords[1]-1], this.pieceQueue[0], this.pieceOrientation)) {
                 newCoords[1] -= 1;
             } else {
                 return newCoords
             }
-            if (newCoords[1] <= -5){
+            if (Math.abs(newCoords[1]) >= this.rows+2 || Math.abs(newCoords[0]) >= this.columns+2){
                 console.error("hard drop/ghost block loop looped too many times: check validPlacement() function")
                 return
             }
@@ -207,7 +210,7 @@ class gameBoard {
     }
 
     hardDrop() {
-        this.pieceCoords = this.findBottom()
+        this.pieceCoords = this.findEdge([0,-1])
         this.timeOfLastPiecePlacement = currentTime;
         this.timeWhenOnGround = currentTime
         this.placeActivePiece()
@@ -389,7 +392,7 @@ function gameLoop() {
     ctx.fillStyle = "#303030"
     ctx.fill()
     ctx.closePath();
-    donuBoard.gravityDrop(1000, 1000, 40000)
+    donuBoard.gravityDrop(1000, 1000, 20000)
     donuBoard.drawBoard(125);
 }
 const donuBoard = new gameBoard(23, 10, 5)
