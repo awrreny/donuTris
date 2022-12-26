@@ -430,8 +430,8 @@ document.addEventListener("keydown", (event) => {  // modified code from https:/
     if (event.defaultPrevented) {
       return; // Do nothing if the event was already processed
     }
-    // console.log(event.code)
-    switch (event.key) {
+    console.log(event.code)
+    switch (event.code) {
         case "ArrowDown":
             donuBoard.translatePiece([0, -1])
             break;
@@ -450,40 +450,40 @@ document.addEventListener("keydown", (event) => {  // modified code from https:/
                 donuBoard.rightKeyPressed = true;
             }
             break;
-        case "d":
+        case "KeyD":
             donuBoard.rotatePiece(1)
             break;
-        case "s":
+        case "KeyS":
             donuBoard.rotatePiece(2)
             break;
-        case "a":
+        case "KeyA":
             donuBoard.rotatePiece(3)
             break;
-        case " ":  // hard drop
+        case "Space":  // hard drop
             donuBoard.hardDrop()
             break;
-        case "Shift":
+        case "ShiftLeft":
             donuBoard.holdPiece()
             break;
-        case "u":
+        case "KeyU":
             donuBoard.donuTransform("left")
             break;
-        case "o":
+        case "KeyO":
             donuBoard.donuTransform("right")
             break;
-        case "j":
+        case "KeyJ":
             donuBoard.donuTransform("leftBound")
             break;
-        case "l":
+        case "KeyL":
             donuBoard.donuTransform("rightBound")
             break;
-        case "i":
+        case "KeyI":
             donuBoard.donuTransform("upBound")
             break;
-        case "k": 
+        case "KeyK": 
             donuBoard.donuTransform("downBound")
             break;
-        case "q":
+        case "KeyQ":
             donuBoard.inputQueue()
             break;
         default:
