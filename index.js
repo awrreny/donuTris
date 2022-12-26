@@ -6,7 +6,9 @@ const ctx = canvas.getContext("2d");
 
 const msPerFrame = 17;  // 60fps
 let DAS = 80
-let ARR = 50
+let ARR = 0
+let SoftDropDAS = 0
+let SoftDropARR = 0
 let currentTime = performance.now();
 
 function shuffleArray(arr) {  // code from https://www.w3docs.com/snippets/javascript/how-to-randomize-shuffle-a-javascript-array.html
@@ -34,8 +36,13 @@ class gameBoard {
         this.timeWhenOnGround = currentTime;  // for lock delay
         this.leftKeyPressed = false;
         this.rightKeyPressed = false;
+        this.downKeyPressed = false;
         this.timeOfLastLeftKeyPress = currentTime
         this.timeOfLastRightKeyPress = currentTime
+        this.timeOfLastDownKeyPress = currentTime
+        this.timeOfLastLeftARRMovement = currentTime
+        this.timeOfLastRightARRMovement = currentTime
+        this.timeOfLastDownARRMovement = currentTime
         this.ARRTimeDebt = 0;
 
         this.board = new Array(this.rows);
@@ -198,13 +205,12 @@ class gameBoard {
     }
     
     findEdge(vector) {
-        let newCoords = [...this.pieceCoords]
+        let newCoords = [...this.pieceCoords];
+        let coordsToTest;
         while (true) {
-            // newCoords = newCoords.map((coord, index) => coord+vector[index])
-            newCoords = [newCoords[0]+vector[0], newCoords[1], vector[1]]
-
-            if (this.validPlacement([newCoords[0], newCoords[1]-1], this.pieceQueue[0], this.pieceOrientation)) {
-                newCoords[1] -= 1;
+            coordsToTest = newCoords.map((coord, index) => coord+vector[index])
+            if (this.validPlacement(coordsToTest, this.pieceQueue[0], this.pieceOrientation)) {
+                newCoords = coordsToTest
             } else {
                 return newCoords
             }
@@ -311,19 +317,47 @@ class gameBoard {
     }
 
     makeDASmovements() {
+        // definitely should rewrite these so that i dont repeat very similar code 3 times
         if (!this.leftKeyPressed) {
             this.timeOfLastLeftKeyPress = currentTime;
+            this.timeOfLastLeftARRMovement = currentTime;
         }
         if (currentTime - this.timeOfLastLeftKeyPress > DAS) {
-            this.translatePiece([-1,0])
+            if (ARR === 0) {
+                this.pieceCoords = this.findEdge([-1, 0])
+            } else if (currentTime - this.timeOfLastLeftARRMovement > ARR) {
+                this.translatePiece([-1,0])
+                this.timeOfLastLeftARRMovement = currentTime;
+            }
         }
+
         if (!this.rightKeyPressed) {
             this.timeOfLastRightKeyPress = currentTime;
+            this.timeOfLastRightARRMovement = currentTime;
         }
         if (currentTime - this.timeOfLastRightKeyPress > DAS) {
-            this.translatePiece([1,0])
+            if (ARR === 0) {
+                this.pieceCoords = this.findEdge([1, 0])
+            } else if (currentTime - this.timeOfLastRightARRMovement > ARR) {
+                this.translatePiece([1, 0])
+                this.timeOfLastRightARRMovement = currentTime;
+            }
+        }
+
+        if (!this.downKeyPressed) {
+            this.timeOfLastDownKeyPress = currentTime;
+            this.timeOfLastDownARRMovement = currentTime;
+        }
+        if (currentTime - this.timeOfLastDownKeyPress > SoftDropDAS) {
+            if (SoftDropARR === 0) {
+                this.pieceCoords = this.findEdge([0, -1])
+            } else if (currentTime - this.timeOfLastDownARRMovement > ARR) {
+                this.translatePiece([0,-1])
+                this.timeOfLastDownARRMovement = currentTime;
+            }
         }
     }
+    
 
 
     // donuTransformations
@@ -414,7 +448,7 @@ function gameLoop() {
     ctx.fill()
     ctx.closePath();
     donuBoard.makeDASmovements()
-    donuBoard.gravityDrop(1000, 1000, 20000)
+    donuBoard.gravityDrop(1000, 100000000, 2000000000)  // 1000, 500, 20000
     donuBoard.drawBoard(125);
 }
 const donuBoard = new gameBoard(23, 10, 5)
@@ -433,10 +467,10 @@ document.addEventListener("keydown", (event) => {  // modified code from https:/
     console.log(event.code)
     switch (event.code) {
         case "ArrowDown":
-            donuBoard.translatePiece([0, -1])
-            break;
-        case "ArrowUp":
-            donuBoard.translatePiece([0, 1])
+            if (!donuBoard.downKeyPressed) {
+                donuBoard.translatePiece([0, -1])
+                donuBoard.downKeyPressed = true;
+            }
             break;
         case "ArrowLeft":
             if (!donuBoard.leftKeyPressed) {
@@ -501,9 +535,7 @@ document.addEventListener("keyup", (event) => {  // modified code from https://d
     // console.log(event.key)
     switch (event.key) {
         case "ArrowDown":
-            break;
-        case "ArrowUp":
-            break;
+            donuBoard.downKeyPressed = false;
         case "ArrowLeft":
             donuBoard.leftKeyPressed = false;
             break;
