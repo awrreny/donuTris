@@ -4,6 +4,9 @@ import * as display from "./display_info.js";
 const canvas = document.getElementById("gameCanvas");  // code from https://developer.mozilla.org/en-US/docs/Games/Tutorials/2D_Breakout_game_pure_JavaScript/Create_the_Canvas_and_draw_on_it
 const ctx = canvas.getContext("2d");
 
+const msPerFrame = 17;  // 60fps
+let currentTime = performance.now();
+
 function shuffleArray(arr) {  // code from https://www.w3docs.com/snippets/javascript/how-to-randomize-shuffle-a-javascript-array.html
     arr.sort(() => Math.random() - 0.5);
 }
@@ -17,11 +20,17 @@ class gameBoard {
         this.minoSize = 25  // pixels per mino (square)
         this.leftXvalue = 125
 
-        this.pieceQueue = ["X"];
+        this.pieceQueue = ["X"];  // the X piece gets deleted at this.resetPieceState();
         this.pieceCoords;
         this.pieceBag = ["T", "I", "L", "J", "S", "Z", "O"];
         this.pieceOrientation = 0;
-        this.heldPiece = ""
+        this.heldPiece = "";
+
+        this.timeOfLastPiecePlacement = currentTime;
+        this.gravityTimeDebt = 0;
+        this.timeOfLastGravityMovement = currentTime;
+        this.timeWhenOnGround = currentTime;  // for lock delay
+        this.ARRTimeDebt = 0;
 
         this.board = new Array(this.rows);
         
@@ -158,6 +167,7 @@ class gameBoard {
         let newCoords = this.pieceCoords.map((coord, index) => coord+vector[index])
         if (this.validPlacement(newCoords, this.pieceQueue[0], this.pieceOrientation)) {
             this.pieceCoords = newCoords
+            this.timeWhenOnGround = currentTime
         // } else {
         //     console.log(`attempted piece placement was not valid: piece coords ${newCoords}`)
         }
@@ -166,12 +176,15 @@ class gameBoard {
     rotatePiece(rotationDirection) {
         const kickOffsets = getKickOffsets(this.pieceQueue[0], rotationDirection, this.pieceOrientation)
         const newOrientation = (this.pieceOrientation + rotationDirection) % 4
+
         let newCoords;
+
         for (let kick of kickOffsets) {
             newCoords = this.pieceCoords.map((coord, index) => coord+kick[index])
             if (this.validPlacement(newCoords, this.pieceQueue[0], newOrientation)) {
                 this.pieceOrientation = newOrientation;
                 this.pieceCoords = newCoords;
+                this.timeWhenOnGround = currentTime
                 return;
             } else {continue}
         }
@@ -195,6 +208,8 @@ class gameBoard {
 
     hardDrop() {
         this.pieceCoords = this.findBottom()
+        this.timeOfLastPiecePlacement = currentTime;
+        this.timeWhenOnGround = currentTime
         this.placeActivePiece()
     }
 
@@ -244,14 +259,6 @@ class gameBoard {
         for (let i = 0; i<(amountOfRowsToAdd); i++) {
             this.board.unshift(Array(this.columns).fill("_"))
         }
-        
-
-        // for (row of this.board) {
-        //     if (row.every((mino) => (mino !== "_"))) {
-        //         this.board.splice
-        //         this.board.unshift(new Array(this.columns).fill("_"))
-        //     }
-        // }
     }
 
     generateQueue() {
@@ -259,7 +266,42 @@ class gameBoard {
         this.pieceQueue = this.pieceQueue.concat(this.pieceBag);
     }
 
-    
+    // timing and stuff
+
+    // makeTimedMovement(msPerAction, movementVector) { // i want to generalise this for both gravity and ARR but don't know how
+    //     let timeSinceLastActionAdjusted = (currentTime - this.timeOfLastGravityMovement) + this.gravityTimeDebt;
+    //     if (timeSinceLastActionAdjusted >= msPerAction) {
+    //         for (; timeSinceLastActionAdjusted >= msPerFrame; timeSinceLastActionAdjusted -= msPerFrame) {
+    //             console.log({timeSinceLastActionAdjusted, msPerFrame})
+    //             this.translatePiece(movementVector)
+    //             console.log(this)
+    //             this.timeOfLastGravityMovement = currentTime
+    //         }
+    //     }
+    //     this.gravityTimeDebt = timeSinceLastActionAdjusted
+    // }
+
+    gravityDrop(msPerDrop, lockDelay, maxActiveTime) {
+        // actual gravity movement (moving down)
+        if (currentTime-this.timeOfLastGravityMovement>msPerDrop) {
+            this.translatePiece([0, -1])
+            this.timeOfLastGravityMovement = currentTime
+        }
+
+        // autolock and lock delay
+        if (this.validPlacement([this.pieceCoords[0], this.pieceCoords[1]-1], this.pieceQueue[0], this.pieceOrientation)) {
+            this.timeWhenOnGround = currentTime
+        }
+        // lock delay is the time a piece has to be on the ground before it locks into place
+        // it can be reset when you move or rotate a piece (only with a valid movement/rotation)
+        // maxActiveTime is the maximum time a piece can be active before auto locking, regardless of lock delay
+        if (currentTime-this.timeWhenOnGround > lockDelay ||
+            currentTime-this.timeOfLastPiecePlacement > totalLockTime) {
+            this.hardDrop()
+        }
+    }
+
+
     // donuTransformations
     donuTransform(transformation) {
         let stackHeight = 0
@@ -341,11 +383,13 @@ class gameBoard {
 
 
 function gameLoop() {
+    currentTime = performance.now()
     ctx.beginPath();
     ctx.rect(0, 0, 500, 575);
     ctx.fillStyle = "#303030"
     ctx.fill()
     ctx.closePath();
+    donuBoard.gravityDrop(1000, 1000, 40000)
     donuBoard.drawBoard(125);
 }
 const donuBoard = new gameBoard(23, 10, 5)
@@ -420,33 +464,7 @@ document.addEventListener("keydown", (event) => {  // modified code from https:/
   }, true);
 
 donuBoard.drawBoard();
-setInterval(gameLoop, 17)
+setInterval(gameLoop, msPerFrame)
 
-
-
-
-
-// let pieceCoords = [3, 2];
-// let piecePixelCoords = pieceCoords.map(x => 25*x)
-// ctx.beginPath();
-// ctx.rect(piecePixelCoords[0], piecePixelCoords[1], 100, 25);
-// ctx.fillStyle = "#00D0FF";
-// ctx.fill();
-// ctx.strokeStyle = "#5ee1ff";
-// ctx.stroke();
-// ctx.closePath();
-
-// ctx.beginPath();
-// ctx.moveTo(piecePixelCoords[0], piecePixelCoords[1]+25);
-// ctx.lineTo(piecePixelCoords[0]+100, piecePixelCoords[1]+25);
-// ctx.lineTo(piecePixelCoords[0]+100, piecePixelCoords[1]);
-// ctx.strokeStyle = "#00afd8";
-// ctx.stroke();
-// ctx.closePath();
-
-
-// const userInput = document.querySelector("#user_input")
-// const outputBox = document.querySelector("#output_text")
-// userInput.addEventListener("keyup", () => {
-//     outputBox.textContent = doThings(userInput.innerText)
-// });
+// TODO
+// move lock delay reset code to different place maybe
