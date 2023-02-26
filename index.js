@@ -556,3 +556,4 @@ setInterval(gameLoop, msPerFrame)
 
 // TODO
 // move lock delay reset code to different place maybe
+// reset key pressed states when page loses focus (blur)
